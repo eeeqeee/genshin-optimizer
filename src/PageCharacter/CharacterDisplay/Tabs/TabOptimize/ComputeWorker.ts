@@ -50,6 +50,7 @@ export class ComputeWorker {
     const ids: string[] = Array(arts.length).fill("")
     let count = { tested: 0, failed: 0, skipped: totalCount - countBuilds(preArts) }
 
+    let lastInterimReport = performance.now();
     function permute(i: number) {
       if (i < 0) {
         const result = compute()
@@ -88,8 +89,13 @@ export class ComputeWorker {
       })
       if (i === 0) {
         count.tested += arts[0].length
-        if (count.tested > 8192)
-          interimReport(count)
+        if (count.tested > 32768) {
+          const now = performance.now()
+          if (now - lastInterimReport > 500) {
+            lastInterimReport = now
+            interimReport(count)
+          }
+        }
       }
     }
 
