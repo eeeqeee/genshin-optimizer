@@ -8,6 +8,7 @@ import DropdownButton from "../../../Components/DropdownMenu/DropdownButton";
 import { NodeFieldDisplay } from "../../../Components/FieldDisplay";
 import { CharacterContext } from "../../../Context/CharacterContext";
 import { DataContext } from '../../../Context/DataContext';
+import { FormulaDataContext } from "../../../Context/FormulaDataContext";
 import { TalentSheetElementKey } from "../../../Data/Characters/CharacterSheet";
 import { uiInput as input } from "../../../Formula";
 import { NumNode } from "../../../Formula/type";
@@ -92,6 +93,7 @@ export default function CharacterTalentPane() {
 }
 function ReactionDisplay() {
   const { data } = useContext(DataContext)
+  const { setFormulaData } = useContext(FormulaDataContext)
   const reaction = data.getDisplay().reaction as { [key: string]: NodeDisplay }
   return <CardLight>
     <CardContent>
@@ -99,7 +101,7 @@ function ReactionDisplay() {
         {Object.entries(reaction).filter(([_, node]) => !node.isEmpty).map(([key, node]) => {
           return <Grid item key={key}>
             <CardDark><CardContent sx={{ p: 1, "&:last-child": { pb: 1 } }}>
-              <NodeFieldDisplay node={node} />
+              <NodeFieldDisplay node={node} data={data} setFormulaData={setFormulaData} />
             </CardContent></CardDark>
           </Grid>
         })}

@@ -45,6 +45,16 @@ import { compactArtifacts, dynamicData } from './foreground';
 import useBuildResult from './useBuildResult';
 import useBuildSetting from './useBuildSetting';
 
+export function useMemoEq<T>(factory: () => T, eq: (prev: T, next: T) => boolean): T {
+  const next = factory()
+  const ref = useRef(next)
+  if (!eq(ref.current, next)) {
+    ref.current = next
+  }
+  return ref.current
+}
+export const arrayEq = <T extends unknown>(a: T[], b: T[]): boolean => a.length === b.length && a.every((x, i) => b[i] === x)
+
 export default function TabBuild() {
   const { t } = useTranslation("page_character_optimize")
   const { character: { key: characterKey, compareData } } = useContext(CharacterContext)
@@ -73,7 +83,9 @@ export default function TabBuild() {
   const noArtifact = useMemo(() => !database.arts.values.length, [database])
 
   const { buildSetting, buildSettingDispatch } = useBuildSetting(characterKey)
-  const { plotBase, optimizationTarget, mainStatAssumptionLevel, allowPartial, maxBuildsToShow, levelLow, levelHigh } = buildSetting
+  const { mainStatAssumptionLevel, allowPartial, maxBuildsToShow, levelLow, levelHigh } = buildSetting
+  const plotBase = useMemoEq(() => buildSetting.plotBase, (a, b) => !!(a && b && arrayEq(a, b)))
+  const optimizationTarget = useMemoEq(() => buildSetting.optimizationTarget, (a, b) => !!(a && b && arrayEq(a, b)))
   const { buildResult: { builds, buildDate }, buildResultDispatch } = useBuildResult(characterKey)
   const teamData = useTeamData(characterKey, mainStatAssumptionLevel)
   const { characterSheet, target: data } = teamData?.[characterKey as CharacterKey] ?? {}
@@ -313,159 +325,173 @@ export default function TabBuild() {
     return data && teamData && { data, teamData }
   }, [data, teamData])
 
-  const targetSelector = <OptimizationTargetSelector
+  const targetSelector = useMemo(() => <OptimizationTargetSelector
     optimizationTarget={optimizationTarget}
     setTarget={target => buildSettingDispatch({ optimizationTarget: target })}
-    disabled={!!generatingBuilds}
-  />
+    disabled={generatingBuilds}
+  />, [buildSettingDispatch, generatingBuilds, optimizationTarget])
 
+  const clownEmoji = useMemo(() => <Grid container spacing={1} >
+    {/* 1*/}
+    <Grid item xs={12} sm={6} lg={3} display="flex" flexDirection="column" gap={1}>
+      {/* character card */}
+      <Box><CharacterCard characterKey={characterKey} onClickTeammate={onClickTeammate} /></Box>
+    </Grid>
+
+    {/* 2 */}
+    <Grid item xs={12} sm={6} lg={3} display="flex" flexDirection="column" gap={1}>
+      <CardLight>
+        <CardContent  >
+          <Typography gutterBottom>{t`mainStat.title`}</Typography>
+          <BootstrapTooltip placement="top" title={<Box>
+            <Typography variant="h6">{t`mainStat.levelAssTooltip.title`}</Typography>
+            <Typography>{t`mainStat.levelAssTooltip.desc`}</Typography>
+          </Box>}>
+            <Box>
+              <AssumeFullLevelToggle mainStatAssumptionLevel={mainStatAssumptionLevel} setmainStatAssumptionLevel={mainStatAssumptionLevel => buildSettingDispatch({ mainStatAssumptionLevel })} disabled={generatingBuilds} />
+            </Box>
+          </BootstrapTooltip>
+        </CardContent>
+        {/* main stat selector */}
+        <MainStatSelectionCard disabled={generatingBuilds} />
+      </CardLight>
+      <BonusStatsCard />
+    </Grid>
+
+    {/* 3 */}
+    <Grid item xs={12} sm={6} lg={6} display="flex" flexDirection="column" gap={1}>
+      <ArtifactSetConfig disabled={generatingBuilds} />
+
+      {/* use excluded */}
+      <UseExcluded disabled={generatingBuilds} artsDirty={artsDirty} />
+
+      {/* use equipped */}
+      <UseEquipped disabled={generatingBuilds} />
+
+      <Button
+        fullWidth
+        startIcon={allowPartial ? <CheckBox /> : <CheckBoxOutlineBlank />}
+        color={allowPartial ? "success" : "secondary"}
+        onClick={() => buildSettingDispatch({ allowPartial: !allowPartial })}
+        disabled={generatingBuilds}
+      >
+        {t`allowPartial`}
+      </Button>
+      { /* Level Filter */}
+      <CardLight>
+        <CardContent>{t`levelFilter`}</CardContent>
+        <ArtifactLevelSlider levelLow={levelLow} levelHigh={levelHigh}
+          setLow={levelLow => buildSettingDispatch({ levelLow })}
+          setHigh={levelHigh => buildSettingDispatch({ levelHigh })}
+          setBoth={(levelLow, levelHigh) => buildSettingDispatch({ levelLow, levelHigh })}
+          disabled={generatingBuilds}
+        />
+      </CardLight>
+
+      {/*Minimum Final Stat Filter */}
+      <StatFilterCard disabled={generatingBuilds} />
+
+    </Grid>
+  </Grid>, [allowPartial, artsDirty, buildSettingDispatch, characterKey, generatingBuilds, levelHigh, levelLow, mainStatAssumptionLevel, onClickTeammate, t])
+  const selector0 = useMemo(() => <DropdownButton disabled={generatingBuilds || !characterKey}
+    title={<Trans t={t} i18nKey="build" count={maxBuildsToShow}>
+      {{ count: maxBuildsToShow }} Builds
+    </Trans>}>
+    <MenuItem>
+      <Typography variant="caption" color="info.main">
+        {t("buildDropdownDesc")}
+      </Typography>
+    </MenuItem>
+    <Divider />
+    {maxBuildsToShowList.map(v => <MenuItem key={v}
+      onClick={() => buildSettingDispatch({ maxBuildsToShow: v })}>
+      <Trans t={t} i18nKey="build" count={v}>
+        {{ count: v }} Builds
+      </Trans>
+    </MenuItem>)}
+  </DropdownButton>, [buildSettingDispatch, characterKey, generatingBuilds, maxBuildsToShow, t])
+  const selector1 = useMemo(() => <DropdownButton disabled={generatingBuilds || !characterKey}
+    sx={{ borderRadius: "4px 0px 0px 4px" }}
+    title={<Trans t={t} i18nKey="thread" count={maxWorkers}>
+      {{ count: maxWorkers }} Threads
+    </Trans>}>
+    <MenuItem>
+      <Typography variant="caption" color="info.main">
+        {t("threadDropdownDesc")}
+      </Typography>
+    </MenuItem>
+    <Divider />
+    {range(1, defThreads).reverse().map(v => <MenuItem key={v}
+      onClick={() => setMaxWorkers(v)}>
+      <Trans t={t} i18nKey="thread" count={v}>
+        {{ count: v }} Threads
+      </Trans>
+    </MenuItem>)}
+  </DropdownButton>, [characterKey, generatingBuilds, maxWorkers, setMaxWorkers, t])
+
+  const selector = useMemo(() => <ButtonGroup>
+    {!isSM && targetSelector}
+    {selector0}
+    {selector1}
+    <BootstrapTooltip placement="top" title={!optimizationTarget ? t("selectTargetFirst") : ""}>
+      <span>
+        <Button
+          disabled={!characterKey || !optimizationTarget || !optimizationTargetNode || optimizationTargetNode.isEmpty}
+          color={generatingBuilds ? "error" : "success"}
+          onClick={generatingBuilds ? () => cancelToken.current() : generateBuilds}
+          startIcon={generatingBuilds ? <Close /> : <TrendingUp />}
+          sx={{ borderRadius: "0px 4px 4px 0px" }}
+        >{generatingBuilds ? t("generateButton.cancel") : t("generateButton.generateBuilds")}</Button>
+      </span>
+    </BootstrapTooltip>
+  </ButtonGroup>, [characterKey, generateBuilds, generatingBuilds, isSM, optimizationTarget, optimizationTargetNode, selector0, selector1, t, targetSelector])
+  const target = useMemo(() => <Box >
+    <ChartCard disabled={generatingBuilds || !optimizationTarget} plotBase={plotBase} setPlotBase={setPlotBase} showTooltip={!optimizationTarget} graphBuilds={graphBuilds} setGraphBuilds={setGraphBuilds} />
+  </Box>, [generatingBuilds, graphBuilds, optimizationTarget, plotBase, setGraphBuilds, setPlotBase])
+  const card = useMemo(() => <CardLight>
+    <CardContent>
+      <Box display="flex" alignItems="center" gap={1} mb={1} >
+        <Typography sx={{ flexGrow: 1 }}>
+          {builds ? <span>Showing <strong>{builds.length + (graphBuilds ? graphBuilds.length : 0)}</strong> build generated for {characterName}. {!!buildDate && <span>Build generated on: <strong>{(new Date(buildDate)).toLocaleString()}</strong></span>}</span>
+            : <span>Select a character to generate builds.</span>}
+        </Typography>
+        <Button disabled={!builds.length} color="error" onClick={() => { setGraphBuilds(undefined); buildResultDispatch({ builds: [], buildDate: 0 }) }} >Clear Builds</Button>
+      </Box>
+      <Grid container display="flex" spacing={1}>
+        <Grid item><HitModeToggle size="small" /></Grid>
+        <Grid item><ReactionToggle size="small" /></Grid>
+        <Grid item flexGrow={1} />
+        <Grid item><SolidToggleButtonGroup exclusive value={compareData} onChange={(_e, v) => characterDispatch({ compareData: v })} size="small">
+          <ToggleButton value={false} disabled={!compareData}>Show new builds</ToggleButton>
+          <ToggleButton value={true} disabled={compareData}>Compare vs. equipped</ToggleButton>
+        </SolidToggleButtonGroup></Grid>
+      </Grid>
+    </CardContent>
+  </CardLight>, [buildDate, buildResultDispatch, builds, characterDispatch, characterName, compareData, graphBuilds, setGraphBuilds])
+  const getLabel0 = useCallback((index) => <Trans t={t} i18nKey="graphBuildLabel" count={index + 1}>Graph #{{ count: index + 1 }}</Trans>, [t])
+  const getLabel1 = useCallback((index) => `#${index + 1}`, [])
+  const bl = useMemo(() =>
+    <>
+      {graphBuilds && <BuildList builds={graphBuilds} characterKey={characterKey} data={data} compareData={compareData} disabled={!!generatingBuilds} getLabel={getLabel0} setBuilds={setGraphBuilds} />}
+      <BuildList builds={builds} characterKey={characterKey} data={data} compareData={compareData} disabled={!!generatingBuilds} getLabel={getLabel1} />
+    </>
+    , [builds, characterKey, compareData, data, generatingBuilds, getLabel0, getLabel1, graphBuilds, setGraphBuilds])
+  const ccc = useMemo(() => <OptimizationTargetContext.Provider value={optimizationTarget}>
+    {bl}
+  </OptimizationTargetContext.Provider>, [bl, optimizationTarget])
   return <Box display="flex" flexDirection="column" gap={1}>
     {noArtifact && <Alert severity="warning" variant="filled"><Trans t={t} i18nKey="noArtis">Oops! It looks like you haven't added any artifacts to GO yet! You should go to the <Link component={RouterLink} to="/artifacts">Artifacts</Link> page and add some!</Trans></Alert>}
     {/* Build Generator Editor */}
     {dataContext && <DataContext.Provider value={dataContext}>
-
-      <Grid container spacing={1} >
-        {/* 1*/}
-        <Grid item xs={12} sm={6} lg={3} display="flex" flexDirection="column" gap={1}>
-          {/* character card */}
-          <Box><CharacterCard characterKey={characterKey} onClickTeammate={onClickTeammate} /></Box>
-        </Grid>
-
-        {/* 2 */}
-        <Grid item xs={12} sm={6} lg={3} display="flex" flexDirection="column" gap={1}>
-          <CardLight>
-            <CardContent  >
-              <Typography gutterBottom>{t`mainStat.title`}</Typography>
-              <BootstrapTooltip placement="top" title={<Box>
-                <Typography variant="h6">{t`mainStat.levelAssTooltip.title`}</Typography>
-                <Typography>{t`mainStat.levelAssTooltip.desc`}</Typography>
-              </Box>}>
-                <Box>
-                  <AssumeFullLevelToggle mainStatAssumptionLevel={mainStatAssumptionLevel} setmainStatAssumptionLevel={mainStatAssumptionLevel => buildSettingDispatch({ mainStatAssumptionLevel })} disabled={generatingBuilds} />
-                </Box>
-              </BootstrapTooltip>
-            </CardContent>
-            {/* main stat selector */}
-            <MainStatSelectionCard disabled={generatingBuilds} />
-          </CardLight>
-          <BonusStatsCard />
-        </Grid>
-
-        {/* 3 */}
-        <Grid item xs={12} sm={6} lg={6} display="flex" flexDirection="column" gap={1}>
-          <ArtifactSetConfig disabled={generatingBuilds} />
-
-          {/* use excluded */}
-          <UseExcluded disabled={generatingBuilds} artsDirty={artsDirty} />
-
-          {/* use equipped */}
-          <UseEquipped disabled={generatingBuilds} />
-
-          <Button
-            fullWidth
-            startIcon={allowPartial ? <CheckBox /> : <CheckBoxOutlineBlank />}
-            color={allowPartial ? "success" : "secondary"}
-            onClick={() => buildSettingDispatch({ allowPartial: !allowPartial })}
-            disabled={generatingBuilds}
-          >
-            {t`allowPartial`}
-          </Button>
-          { /* Level Filter */}
-          <CardLight>
-            <CardContent>{t`levelFilter`}</CardContent>
-            <ArtifactLevelSlider levelLow={levelLow} levelHigh={levelHigh}
-              setLow={levelLow => buildSettingDispatch({ levelLow })}
-              setHigh={levelHigh => buildSettingDispatch({ levelHigh })}
-              setBoth={(levelLow, levelHigh) => buildSettingDispatch({ levelLow, levelHigh })}
-              disabled={generatingBuilds}
-            />
-          </CardLight>
-
-          {/*Minimum Final Stat Filter */}
-          <StatFilterCard disabled={generatingBuilds} />
-
-        </Grid>
-      </Grid>
+      {clownEmoji}
       {/* Footer */}
       {isSM && targetSelector}
-      <ButtonGroup>
-        {!isSM && targetSelector}
-        <DropdownButton disabled={generatingBuilds || !characterKey}
-          title={<Trans t={t} i18nKey="build" count={maxBuildsToShow}>
-            {{ count: maxBuildsToShow }} Builds
-          </Trans>}>
-          <MenuItem>
-            <Typography variant="caption" color="info.main">
-              {t("buildDropdownDesc")}
-            </Typography>
-          </MenuItem>
-          <Divider />
-          {maxBuildsToShowList.map(v => <MenuItem key={v}
-            onClick={() => buildSettingDispatch({ maxBuildsToShow: v })}>
-            <Trans t={t} i18nKey="build" count={v}>
-              {{ count: v }} Builds
-            </Trans>
-          </MenuItem>)}
-        </DropdownButton>
-        <DropdownButton disabled={generatingBuilds || !characterKey}
-          sx={{ borderRadius: "4px 0px 0px 4px" }}
-          title={<Trans t={t} i18nKey="thread" count={maxWorkers}>
-            {{ count: maxWorkers }} Threads
-          </Trans>}>
-          <MenuItem>
-            <Typography variant="caption" color="info.main">
-              {t("threadDropdownDesc")}
-            </Typography>
-          </MenuItem>
-          <Divider />
-          {range(1, defThreads).reverse().map(v => <MenuItem key={v}
-            onClick={() => setMaxWorkers(v)}>
-            <Trans t={t} i18nKey="thread" count={v}>
-              {{ count: v }} Threads
-            </Trans>
-          </MenuItem>)}
-        </DropdownButton>
-        <BootstrapTooltip placement="top" title={!optimizationTarget ? t("selectTargetFirst") : ""}>
-          <span>
-            <Button
-              disabled={!characterKey || !optimizationTarget || !optimizationTargetNode || optimizationTargetNode.isEmpty}
-              color={generatingBuilds ? "error" : "success"}
-              onClick={generatingBuilds ? () => cancelToken.current() : generateBuilds}
-              startIcon={generatingBuilds ? <Close /> : <TrendingUp />}
-              sx={{ borderRadius: "0px 4px 4px 0px" }}
-            >{generatingBuilds ? t("generateButton.cancel") : t("generateButton.generateBuilds")}</Button>
-          </span>
-        </BootstrapTooltip>
-      </ButtonGroup>
+      {selector}
 
       {!!characterKey && <BuildAlert {...{ status: buildStatus, characterName, maxBuildsToShow }} />}
-      <Box >
-        <ChartCard disabled={generatingBuilds || !optimizationTarget} plotBase={plotBase} setPlotBase={setPlotBase} showTooltip={!optimizationTarget} />
-      </Box>
-      <CardLight>
-        <CardContent>
-          <Box display="flex" alignItems="center" gap={1} mb={1} >
-            <Typography sx={{ flexGrow: 1 }}>
-              {builds ? <span>Showing <strong>{builds.length + (graphBuilds ? graphBuilds.length : 0)}</strong> build generated for {characterName}. {!!buildDate && <span>Build generated on: <strong>{(new Date(buildDate)).toLocaleString()}</strong></span>}</span>
-                : <span>Select a character to generate builds.</span>}
-            </Typography>
-            <Button disabled={!builds.length} color="error" onClick={() => { setGraphBuilds(undefined); buildResultDispatch({ builds: [], buildDate: 0 }) }} >Clear Builds</Button>
-          </Box>
-          <Grid container display="flex" spacing={1}>
-            <Grid item><HitModeToggle size="small" /></Grid>
-            <Grid item><ReactionToggle size="small" /></Grid>
-            <Grid item flexGrow={1} />
-            <Grid item><SolidToggleButtonGroup exclusive value={compareData} onChange={(_e, v) => characterDispatch({ compareData: v })} size="small">
-              <ToggleButton value={false} disabled={!compareData}>Show new builds</ToggleButton>
-              <ToggleButton value={true} disabled={compareData}>Compare vs. equipped</ToggleButton>
-            </SolidToggleButtonGroup></Grid>
-          </Grid>
-        </CardContent>
-      </CardLight>
-      <OptimizationTargetContext.Provider value={optimizationTarget}>
-        {graphBuilds && <BuildList builds={graphBuilds} characterKey={characterKey} data={data} compareData={compareData} disabled={!!generatingBuilds} getLabel={(index) => <Trans t={t} i18nKey="graphBuildLabel" count={index + 1}>Graph #{{count: index + 1}}</Trans>} setBuilds={setGraphBuilds} />}
-        <BuildList builds={builds} characterKey={characterKey} data={data} compareData={compareData} disabled={!!generatingBuilds} getLabel={(index) => `#${index + 1}`} />
-      </OptimizationTargetContext.Provider>
+      {target}
+      {card}
+      {ccc}
     </DataContext.Provider>}
   </Box>
 }
@@ -485,19 +511,29 @@ function BuildList({ builds, setBuilds, characterKey, data, compareData, disable
       setBuilds(builds_)
     }
   },
-  [builds, setBuilds])
-  // Memoize the build list because calculating/rendering the build list is actually very expensive, which will cause longer optimization times.
+    [builds, setBuilds])
+
+  // TODO useMemo each build when the useContext spaghetti is cleaned up
+  // we should not rerender when changing main stat filters
   const list = useMemo(() => <Suspense fallback={<Skeleton variant="rectangular" width="100%" height={600} />}>
-    {builds?.map((build, index) => characterKey && data && <DataContextWrapper
-      key={index + build.join()}
-      characterKey={characterKey}
-      build={build}
-      oldData={data}
-    >
-      <BuildItemWrapper index={index} label={getLabel(index)} build={build} compareData={compareData} disabled={disabled} deleteBuild={setBuilds ? deleteBuild : undefined} />
-    </DataContextWrapper>
+    {builds?.map((build, index) => characterKey && data &&
+      <DataContextWrapper
+        key={index + build.join()}
+        characterKey={characterKey}
+        build={build}
+        oldData={data}
+      >
+        <BuildItemWrapper
+          index={index}
+          label={getLabel(index)}
+          build={build}
+          compareData={compareData}
+          disabled={disabled}
+          deleteBuild={setBuilds ? deleteBuild : undefined}
+        />
+      </DataContextWrapper>
     )}
-  </Suspense>, [builds, characterKey, data, compareData, disabled, getLabel, deleteBuild, setBuilds])
+  </Suspense>, [builds, characterKey, data, getLabel, compareData, disabled, setBuilds, deleteBuild])
   return list
 }
 function BuildItemWrapper({ index, label, build, compareData, disabled, deleteBuild }: {

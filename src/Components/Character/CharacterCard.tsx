@@ -3,6 +3,7 @@ import { Box, CardActionArea, CardContent, Chip, Grid, IconButton, Skeleton, Typ
 import { Suspense, useCallback, useContext, useMemo } from 'react';
 import { CharacterContext, CharacterContextObj } from '../../Context/CharacterContext';
 import { DataContext, dataContextObj, TeamData } from '../../Context/DataContext';
+import { FormulaDataContext } from '../../Context/FormulaDataContext';
 import CharacterSheet from '../../Data/Characters/CharacterSheet';
 import { ascensionMaxLevel } from '../../Data/LevelData';
 import { DatabaseContext } from '../../Database/Database';
@@ -255,8 +256,9 @@ function Artifacts() {
 
 function Stats() {
   const { data } = useContext(DataContext)
+  const { setFormulaData } = useContext(FormulaDataContext)
   return <Box sx={{ width: "100%" }} >
-    {Object.values(data.getDisplay().basic).map(n => <NodeFieldDisplay key={JSON.stringify(n.info)} node={n} />)}
+    {Object.values(data.getDisplay().basic).map(n => <NodeFieldDisplay key={JSON.stringify(n.info)} node={n} data={data} setFormulaData={setFormulaData} />)}
     {data.get(input.special).info.name && <Box sx={{ display: "flex", gap: 1, alignItems: "center" }} >
       <Typography flexGrow={1}><strong>Specialized:</strong></Typography>
       {data.get(input.special).info.icon}

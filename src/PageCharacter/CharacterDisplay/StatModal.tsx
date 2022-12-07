@@ -11,6 +11,7 @@ import ModalWrapper from "../../Components/ModalWrapper";
 import StatEditorList from "../../Components/StatEditorList";
 import { CharacterContext } from "../../Context/CharacterContext";
 import { DataContext } from "../../Context/DataContext";
+import { FormulaDataContext } from "../../Context/FormulaDataContext";
 import { allInputPremodKeys, uiInput as input } from "../../Formula";
 import { ReadNode } from "../../Formula/type";
 import { nodeVStr } from "../../Formula/uiData";
@@ -64,8 +65,9 @@ const miscStatkeys = allInputPremodKeys.filter(k => !mainEditKeys.includes(k as 
 
 function StatDisplayContent({ nodes, extra }: { nodes: ReadNode<number>[], extra?: Displayable }) {
   const { data, oldData } = useContext(DataContext)
+  const { setFormulaData } = useContext(FormulaDataContext)
   return <FieldDisplayList >
-    {nodes.map(rn => <NodeFieldDisplay component={ListItem} key={JSON.stringify(rn.info)} node={data.get(rn)} oldValue={oldData?.get(rn)?.value} />)}
+    {nodes.map(rn => <NodeFieldDisplay component={ListItem} key={JSON.stringify(rn.info)} node={data.get(rn)} oldValue={oldData?.get(rn)?.value} data={data} setFormulaData={setFormulaData} />)}
     {extra}
   </FieldDisplayList>
 }

@@ -9,7 +9,7 @@ import CardLight from '../../../../../../Components/Card/CardLight';
 import InfoTooltip from '../../../../../../Components/InfoTooltip';
 import { CharacterContext } from '../../../../../../Context/CharacterContext';
 import { DataContext } from '../../../../../../Context/DataContext';
-import { GraphContext } from '../../../../../../Context/GraphContext';
+import { ChartData } from '../../../../../../Context/GraphContext';
 import { ArtCharDatabase, DatabaseContext } from '../../../../../../Database/Database';
 import { input } from '../../../../../../Formula';
 import { NumNode } from '../../../../../../Formula/type';
@@ -33,14 +33,15 @@ type ChartCardProps = {
   setPlotBase: (path: string[] | undefined) => void
   disabled?: boolean
   showTooltip?: boolean
+  chartData?: ChartData
+  graphBuilds: string[][] | undefined
+  setGraphBuilds: (builds: string[][] | undefined) => void
 }
-export default function ChartCard({ plotBase, setPlotBase, disabled = false, showTooltip = false }: ChartCardProps) {
+export default function ChartCard({ plotBase, setPlotBase, disabled = false, showTooltip = false, chartData, graphBuilds, setGraphBuilds }: ChartCardProps) {
   const { t } = useTranslation(["page_character_optimize", "ui"])
   const { data } = useContext(DataContext)
-  const { chartData } = useContext(GraphContext)
   const [showDownload, setshowDownload] = useState(false)
   const [showMin, setshowMin] = useState(true)
-  const { graphBuilds } = useContext(GraphContext)
   const { database } = useContext(DatabaseContext)
   const { character: { key: characterKey } } = useContext(CharacterContext)
   const { buildResult: { builds } } = useBuildResult(characterKey)
@@ -90,7 +91,7 @@ export default function ChartCard({ plotBase, setPlotBase, disabled = false, sho
       }
       return enhancedDatum
     })
-    .sort((a, b) => a!.x - b!.x) as EnhancedPoint[]
+      .sort((a, b) => a!.x - b!.x) as EnhancedPoint[]
 
     const minimumData: EnhancedPoint[] = []
     for (const point of points) {
@@ -176,7 +177,7 @@ export default function ChartCard({ plotBase, setPlotBase, disabled = false, sho
           </CardContent>
         </CardDark>
       </Collapse>
-      <Chart displayData={displayData} plotNode={chartData.plotNode} valueNode={chartData.valueNode} showMin={showMin} />
+      <Chart displayData={displayData} plotNode={chartData.plotNode} valueNode={chartData.valueNode} showMin={showMin} graphBuilds={graphBuilds} setGraphBuilds={setGraphBuilds} />
       {displayData.length > 1 && <Slider
         marks
         value={[sliderLow, sliderHigh]}
@@ -210,13 +211,14 @@ const optTargetColor = "#8884d8"
 const highlightedColor = "cyan"
 const currentColor = "#46a046"
 const lineColor = "#ff7300"
-function Chart({ displayData, plotNode, valueNode, showMin }: {
+function Chart({ displayData, plotNode, valueNode, showMin, graphBuilds, setGraphBuilds }: {
   displayData: EnhancedPoint[]
   plotNode: NumNode
   valueNode: NumNode
   showMin: boolean
+  graphBuilds: string[][] | undefined
+  setGraphBuilds: (builds: string[][] | undefined) => void
 }) {
-  const { graphBuilds, setGraphBuilds } = useContext(GraphContext)
   const { t } = useTranslation("page_character_optimize")
   const [selectedPoint, setSelectedPoint] = useState<EnhancedPoint>()
   const addBuildToList = useCallback((build: string[]) => setGraphBuilds([...(graphBuilds ?? []), build]), [setGraphBuilds, graphBuilds])
@@ -261,6 +263,7 @@ function Chart({ displayData, plotNode, valueNode, showMin }: {
           selectedPoint={selectedPoint}
           setSelectedPoint={setSelectedPoint}
           addBuildToList={addBuildToList}
+          graphBuilds={graphBuilds}
         />}
         trigger="click"
         wrapperStyle={{ pointerEvents: "auto", cursor: "auto" }}
@@ -271,7 +274,7 @@ function Chart({ displayData, plotNode, valueNode, showMin }: {
         { id: "trueY", value: t`tcGraph.generatedBuilds`, type: "circle", color: optTargetColor },
         { id: "highlighted", value: t`tcGraph.highlightedBuilds`, type: "square", color: highlightedColor },
         { id: "current", value: t`tcGraph.currentBuild`, type: "diamond", color: currentColor },
-      ]}/>
+      ]} />
       {showMin && <Line
         dataKey="min"
         stroke={lineColor}

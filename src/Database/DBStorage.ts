@@ -33,6 +33,7 @@ export class DBLocalStorage implements DBStorage {
   }
 
   get(key: string) {
+    // TODO wtf is this
     const string = this.storage.getItem(key)
     if (!string) return undefined
     try {

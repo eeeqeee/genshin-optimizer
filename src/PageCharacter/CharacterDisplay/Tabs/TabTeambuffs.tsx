@@ -12,6 +12,7 @@ import GeneralAutocomplete, { GeneralAutocompleteOption } from "../../../Compone
 import InfoTooltip from "../../../Components/InfoTooltip";
 import { CharacterContext, CharacterContextObj } from "../../../Context/CharacterContext";
 import { DataContext, dataContextObj } from "../../../Context/DataContext";
+import { FormulaDataContext } from "../../../Context/FormulaDataContext";
 import { ArtifactSheet } from "../../../Data/Artifacts/ArtifactSheet";
 import CharacterSheet from "../../../Data/Characters/CharacterSheet";
 import { resonanceSheets } from "../../../Data/Resonance";
@@ -38,6 +39,7 @@ export default function TabTeambuffs() {
 }
 export function TeamBuffDisplay() {
   const { data, oldData } = useContext(DataContext)
+  const { setFormulaData } = useContext(FormulaDataContext)
   const teamBuffs = data.getTeamBuff()
   const nodes: Array<[string[], NodeDisplay<number>]> = []
   Object.entries(teamBuffs.total ?? {}).forEach(([key, node]) =>
@@ -55,7 +57,7 @@ export function TeamBuffDisplay() {
     <CardContent>
       <Grid container>
         {nodes.map(([path, n]) => n && <Grid item xs={12} key={JSON.stringify(n.info)} >
-          <NodeFieldDisplay node={n} oldValue={objPathValue(oldData?.getTeamBuff(), path)?.value} />
+          <NodeFieldDisplay node={n} oldValue={objPathValue(oldData?.getTeamBuff(), path)?.value} data={data} setFormulaData={setFormulaData} />
         </Grid>)}
       </Grid>
     </CardContent>

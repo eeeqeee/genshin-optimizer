@@ -12,6 +12,7 @@ import ModalWrapper from "../Components/ModalWrapper"
 import RefinementDropdown from "../Components/RefinementDropdown"
 import { StarsDisplay } from "../Components/StarDisplay"
 import { DataContext } from "../Context/DataContext"
+import { FormulaDataContext } from "../Context/FormulaDataContext"
 import CharacterSheet from "../Data/Characters/CharacterSheet"
 import { milestoneLevelsLow } from "../Data/LevelData"
 import WeaponSheet from "../Data/Weapons/WeaponSheet"
@@ -38,6 +39,7 @@ export default function WeaponEditor({
   extraButtons
 }: WeaponStatsEditorCardProps) {
   const { data } = useContext(DataContext)
+  const { setFormulaData } = useContext(FormulaDataContext)
 
   const { database } = useContext(DatabaseContext)
   const weapon = useWeapon(propWeaponId)
@@ -108,7 +110,7 @@ export default function WeaponEditor({
                 {[input.weapon.main, input.weapon.sub, input.weapon.sub2].map(node => {
                   const n = weaponUIData.get(node)
                   if (n.isEmpty || !n.value) return null
-                  return <NodeFieldDisplay key={JSON.stringify(n.info)} node={n} component={ListItem} />
+                  return <NodeFieldDisplay key={JSON.stringify(n.info)} node={n} component={ListItem} data={data} setFormulaData={setFormulaData} />
                 })}
               </FieldDisplayList>
             </CardDark>

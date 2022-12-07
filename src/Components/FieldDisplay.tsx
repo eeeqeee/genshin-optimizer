@@ -5,7 +5,7 @@ import { DataContext } from "../Context/DataContext";
 import { FormulaDataContext } from "../Context/FormulaDataContext";
 import { NodeDisplay } from "../Formula/api";
 import { Variant } from "../Formula/type";
-import { nodeVStr } from "../Formula/uiData";
+import { nodeVStr, UIData } from "../Formula/uiData";
 import { valueString } from "../KeyMap";
 import { allAmpReactions, AmpReactionKey } from "../Types/consts";
 import { IBasicFieldDisplay, IFieldDisplay } from "../Types/fieldDisplay";
@@ -22,6 +22,7 @@ export default function FieldsDisplay({ fields }: { fields: IFieldDisplay[] }) {
 
 function FieldDisplay({ field, component }: { field: IFieldDisplay, component?: React.ElementType }) {
   const { data, oldData } = useContext(DataContext)
+  const { setFormulaData } = useContext(FormulaDataContext)
   const canShow = useMemo(() => field?.canShow?.(data) ?? true, [field, data])
   if (!canShow) return null
   if ("node" in field) {
@@ -30,15 +31,14 @@ function FieldDisplay({ field, component }: { field: IFieldDisplay, component?: 
     if (oldData) {
       const oldNode = oldData.get(field.node)
       const oldValue = oldNode.isEmpty ? 0 : oldNode.value
-      return <NodeFieldDisplay node={node} oldValue={oldValue} component={component} />
+      return <NodeFieldDisplay data={data} setFormulaData={setFormulaData} node={node} oldValue={oldValue} component={component} />
     }
-    else return <NodeFieldDisplay node={node} component={component} />
+    else return <NodeFieldDisplay data={data} setFormulaData={setFormulaData} node={node} component={component} />
   }
-  return <BasicFieldDisplay field={field} component={component} />
+  return <BasicFieldDisplay field={field} component={component} data={data} />
 }
 
-export function BasicFieldDisplay({ field, component }: { field: IBasicFieldDisplay, component?: React.ElementType }) {
-  const { data } = useContext(DataContext)
+export function BasicFieldDisplay({ field, component, data }: { field: IBasicFieldDisplay, component?: React.ElementType, data: UIData }) {
   const v = evalIfFunc(field.value, data)
   const variant = evalIfFunc(field.variant, data)
   const text = field.text && <span>{field.text}</span>
@@ -49,10 +49,15 @@ export function BasicFieldDisplay({ field, component }: { field: IBasicFieldDisp
   </Box>
 }
 
-export function NodeFieldDisplay({ node, oldValue, component, emphasize }: { node: NodeDisplay, oldValue?: number, component?: React.ElementType, emphasize?: boolean }) {
-  const { data } = useContext(DataContext)
-  const { setFormulaData } = useContext(FormulaDataContext)
-  const onClick = useCallback(() => setFormulaData(data, node), [setFormulaData, data, node])
+export function NodeFieldDisplay({ node, oldValue, component, emphasize, data, setFormulaData }: {
+  node: NodeDisplay
+  oldValue?: number
+  component?: React.ElementType
+  emphasize?: boolean
+  data: UIData
+  setFormulaData: (data?: UIData | undefined, node?: NodeDisplay<number> | undefined) => void
+}) {
+  const onClick = useCallback(() => setFormulaData(data, node), [data, node, setFormulaData])
 
   if (node.isEmpty) return null
   const { multi } = node.info

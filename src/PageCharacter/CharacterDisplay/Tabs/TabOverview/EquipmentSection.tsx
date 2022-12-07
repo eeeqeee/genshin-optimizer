@@ -205,8 +205,8 @@ function ArtifactSectionCard() {
             </CardDark>
           </ModalWrapper>
           <FieldDisplayList >
-            <BasicFieldDisplay field={rvField} component={ListItem} />
-            {rvmField?.canShow?.(data) && <BasicFieldDisplay field={rvmField} component={ListItem} />}
+            <BasicFieldDisplay field={rvField} component={ListItem} data={data} />
+            {rvmField?.canShow?.(data) && <BasicFieldDisplay field={rvmField} component={ListItem} data={data} />}
           </FieldDisplayList>
         </CardDark>
         {artifactSheets && setEffects && Object.entries(setEffects).flatMap(([setKey, setNumKeyArr]) =>

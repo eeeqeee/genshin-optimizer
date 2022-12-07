@@ -46,6 +46,7 @@ import { ICachedWeapon } from "../../../../Types/weapon";
 import { deepClone, objectMap } from "../../../../Util/Util";
 import { defaultInitialWeaponKey } from "../../../../Util/WeaponUtil";
 import useCharTC from "./useCharTC";
+import { FormulaDataContext } from "../../../../Context/FormulaDataContext";
 const WeaponSelectionModal = React.lazy(() => import('../../../../Components/Weapon/WeaponSelectionModal'))
 
 type ISet = Partial<Record<ArtifactSetKey, 1 | 2 | 4>>
@@ -215,6 +216,7 @@ function WeaponEditorCard({ weapon, setWeapon, weaponTypeKey }: { weapon: ICache
   const weaponSheet = usePromise(() => WeaponSheet.get(key), [key])
   const [show, onShow, onHide] = useBoolState()
   const { data } = useContext(DataContext)
+  const { setFormulaData } = useContext(FormulaDataContext)
   const weaponUIData = useMemo(() => weaponSheet && weapon && computeUIData([weaponSheet.data, dataObjForWeapon(weapon)]), [weaponSheet, weapon])
   return <CardLight sx={{ p: 1, mb: 1 }} >
     <WeaponSelectionModal ascension={ascension} show={show} onHide={onHide} onSelect={k => setWeapon({ key: k })} weaponTypeFilter={weaponTypeKey} />
@@ -239,7 +241,7 @@ function WeaponEditorCard({ weapon, setWeapon, weaponTypeKey }: { weapon: ICache
           {[input.weapon.main, input.weapon.sub, input.weapon.sub2].map((node, i) => {
             const n = weaponUIData.get(node)
             if (n.isEmpty || !n.value) return null
-            return <NodeFieldDisplay key={JSON.stringify(n.info)} node={n} component={ListItem} />
+            return <NodeFieldDisplay key={JSON.stringify(n.info)} node={n} component={ListItem} data={data} setFormulaData={setFormulaData} />
           })}
         </FieldDisplayList>}
       </CardDark>

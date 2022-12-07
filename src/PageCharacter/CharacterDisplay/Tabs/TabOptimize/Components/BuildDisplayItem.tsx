@@ -66,6 +66,7 @@ export default function BuildDisplayItem({ label, compareBuild, extraButtonsRigh
     [artifactIdsBySlot, database.arts]
   )
 
+  const weaponNano = useMemo(() => <WeaponCardNano showLocation weaponId={data.get(input.weapon.id).value} />, [data])
   // Memoize Arts because of its dynamic onClick
   const artNanos = useMemo(() => allSlotKeys.map(slotKey =>
     <Grid item xs={1} key={slotKey} >
@@ -83,18 +84,10 @@ export default function BuildDisplayItem({ label, compareBuild, extraButtonsRigh
     <Suspense fallback={<Skeleton variant="rectangular" width="100%" height={600} />}>
       {newOld && <CompareArtifactModal newOld={newOld} mainStatAssumptionLevel={mainStatAssumptionLevel} onClose={close} />}
       <CardContent>
-        <Box display="flex" gap={1} sx={{ pb: 1 }} flexWrap="wrap">
-          {label !== undefined && <SqBadge color="info"><Typography><strong>{label}{currentlyEquipped ? " (Equipped)" : ""}</strong></Typography></SqBadge>}
-          <ArtifactSetBadges artifacts={artifacts} currentlyEquipped={currentlyEquipped} />
-          <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "flex-end" }}>
-          </Box>
-          {extraButtonsLeft}
-          <Button size='small' color="success" onClick={equipBuild} disabled={disabled || currentlyEquipped} startIcon={<Checkroom />}>Equip Build</Button>
-          {extraButtonsRight}
-        </Box>
+        <BuildHeader label={label} currentlyEquipped={currentlyEquipped} artifacts={artifacts} extraButtonsLeft={extraButtonsLeft} equipBuild={equipBuild} disabled={disabled} extraButtonsRight={extraButtonsRight} />
         <Grid container spacing={1} sx={{ pb: 1 }} columns={{ xs: 2, sm: 3, md: 4, lg: 6 }}>
           <Grid item xs={1}>
-            <WeaponCardNano showLocation weaponId={data.get(input.weapon.id).value} />
+            {weaponNano}
           </Grid>
           {artNanos}
         </Grid>
@@ -104,6 +97,26 @@ export default function BuildDisplayItem({ label, compareBuild, extraButtonsRigh
       </CardContent>
     </Suspense>
   </CardLight>
+}
+
+function BuildHeader({ label, currentlyEquipped, artifacts, extraButtonsLeft, equipBuild, disabled, extraButtonsRight }: {
+  label?: Displayable,
+  currentlyEquipped: boolean
+  artifacts: ICachedArtifact[]
+  extraButtonsLeft?: JSX.Element,
+  equipBuild: () => void
+  disabled?: boolean,
+  extraButtonsRight?: JSX.Element,
+}) {
+  return useMemo(() => <Box display="flex" gap={1} sx={{ pb: 1 }} flexWrap="wrap">
+    {label !== undefined && <SqBadge color="info"><Typography><strong>{label}{currentlyEquipped ? " (Equipped)" : ""}</strong></Typography></SqBadge>}
+    <ArtifactSetBadges artifacts={artifacts} currentlyEquipped={currentlyEquipped} />
+    <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "flex-end" }}>
+    </Box>
+    {extraButtonsLeft}
+    <Button size='small' color="success" onClick={equipBuild} disabled={disabled || currentlyEquipped} startIcon={<Checkroom />}>Equip Build</Button>
+    {extraButtonsRight}
+  </Box>, [artifacts, currentlyEquipped, disabled, equipBuild, extraButtonsLeft, extraButtonsRight, label])
 }
 
 function CompareArtifactModal({ newOld: { newId, oldId }, mainStatAssumptionLevel, onClose }: { newOld: NewOld, mainStatAssumptionLevel: number, onClose: () => void }) {

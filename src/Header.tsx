@@ -116,6 +116,17 @@ export default function Header(props) {
 }
 
 const maincontent = [artifacts, weapons, characters, tools, scanner, doc, setting] as const
+const headerSx = {
+  "& .MuiTab-root": {
+    p: 1,
+    minWidth: "auto",
+    minHeight: "auto",
+  },
+  "& .MuiTab-root:hover": {
+    transition: "background-color 0.5s ease",
+    backgroundColor: "rgba(255,255,255,0.1)"
+  },
+}
 function HeaderContent({ anchor }) {
   const theme = useTheme();
   const isXL = useMediaQuery(theme.breakpoints.up('xl'));
@@ -124,36 +135,28 @@ function HeaderContent({ anchor }) {
   const { t } = useTranslation("ui")
 
   const { params: { currentTab } } = useMatch({ path: "/:currentTab", end: false }) ?? { params: { currentTab: "" } };
+  const tabs = useMemo(() => [
+    <Tab key={0} value="" component={RouterLink} to="/" label={<Typography variant="h6" sx={{ px: 1 }}>
+      <Trans t={t} i18nKey="pageTitle">Genshin Optimizer</Trans>
+    </Typography>} />,
+    ...maincontent.map(({ i18Key, value, to, icon, textSuffix }) => {
+      const tooltipIcon = isXL ? icon : <Tooltip arrow title={t(i18Key)}>{icon as JSX.Element}</Tooltip>
+      return <Tab key={value} value={value} component={RouterLink} to={to} icon={tooltipIcon} iconPosition="start" label={(isXL || textSuffix) ? <Box display="flex" gap={1} alignItems="center">{(isXL) && <span>{t(i18Key)}</span>}{textSuffix}</Box> : undefined} />
+    }),
+    <Box key={1} flexGrow={1} />,
+    ...links.map(({ i18Key, href, label, icon }) => {
+      const tooltipIcon = isXL ? icon : <Tooltip arrow title={t(i18Key)}>{icon as JSX.Element}</Tooltip>
+      return <Tab key={label} component="a" href={href} target="_blank" icon={tooltipIcon} iconPosition="start" onClick={(_: any) => ReactGA.outboundLink({ label }, () => { })} label={isXL ? t(i18Key) : undefined} />
+    })
+  ], [isXL, t])
   if (isMobile) return <MobileHeader anchor={anchor} currentTab={currentTab} />
   return <Box>
     <AppBar position="static" sx={{ bgcolor: "#343a40", display: "flex", flexWrap: "nowrap" }} elevation={0} id={anchor} >
       <Tabs
         value={currentTab}
-        sx={{
-          "& .MuiTab-root": {
-            p: 1,
-            minWidth: "auto",
-            minHeight: "auto",
-          },
-          "& .MuiTab-root:hover": {
-            transition: "background-color 0.5s ease",
-            backgroundColor: "rgba(255,255,255,0.1)"
-          },
-        }}
+        sx={headerSx}
       >
-        <Tab value="" component={RouterLink} to="/" label={<Typography variant="h6" sx={{ px: 1 }}>
-          <Trans t={t} i18nKey="pageTitle">Genshin Optimizer</Trans>
-        </Typography>} />
-        {maincontent.map(({ i18Key, value, to, icon, textSuffix }) => {
-          const tooltipIcon = isXL ? icon : <Tooltip arrow title={t(i18Key)}>{icon as JSX.Element}</Tooltip>
-          return <Tab key={value} value={value} component={RouterLink} to={to} icon={tooltipIcon} iconPosition="start" label={(isXL || textSuffix) ? <Box display="flex" gap={1} alignItems="center">{(isXL) && <span>{t(i18Key)}</span>}{textSuffix}</Box> : undefined} />
-        })}
-
-        <Box flexGrow={1} />
-        {links.map(({ i18Key, href, label, icon }) => {
-          const tooltipIcon = isXL ? icon : <Tooltip arrow title={t(i18Key)}>{icon as JSX.Element}</Tooltip>
-          return <Tab key={label} component="a" href={href} target="_blank" icon={tooltipIcon} iconPosition="start" onClick={(_: any) => ReactGA.outboundLink({ label }, () => { })} label={isXL ? t(i18Key) : undefined} />
-        })}
+        {tabs}
       </Tabs>
     </AppBar>
   </Box>

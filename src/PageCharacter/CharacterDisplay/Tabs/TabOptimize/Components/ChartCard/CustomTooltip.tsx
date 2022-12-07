@@ -9,7 +9,6 @@ import CloseButton from "../../../../../../Components/CloseButton"
 import SqBadge from "../../../../../../Components/SqBadge"
 import { CharacterContext } from "../../../../../../Context/CharacterContext"
 import { DataContext } from "../../../../../../Context/DataContext"
-import { GraphContext } from "../../../../../../Context/GraphContext"
 import { DatabaseContext } from "../../../../../../Database/Database"
 import { input } from "../../../../../../Formula"
 import { Unit, valueString } from "../../../../../../KeyMap"
@@ -27,12 +26,12 @@ type CustomTooltipProps = TooltipProps<number, string> & {
   selectedPoint: EnhancedPoint | undefined
   setSelectedPoint: (pt: EnhancedPoint | undefined) => void
   addBuildToList: (build: string[]) => void
+  graphBuilds: string[][] | undefined
 }
-export default function CustomTooltip({ xLabel, xUnit, yLabel, yUnit, selectedPoint, setSelectedPoint, addBuildToList, ...tooltipProps }: CustomTooltipProps) {
+export default function CustomTooltip({ xLabel, xUnit, yLabel, yUnit, selectedPoint, setSelectedPoint, addBuildToList, graphBuilds, ...tooltipProps }: CustomTooltipProps) {
   const { database } = useContext(DatabaseContext)
   const { data } = useContext(DataContext)
   const { t } = useTranslation("page_character_optimize")
-  const { graphBuilds } = useContext(GraphContext)
   const { character: { key: characterKey } } = useContext(CharacterContext)
   const { buildResult: { builds } } = useBuildResult(characterKey)
 
