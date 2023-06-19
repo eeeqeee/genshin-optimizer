@@ -116,7 +116,9 @@ class ErrorBoundary extends Component<Props, State> {
                               <Trans t={t} i18nKey="report.3">
                                 Click{' '}
                                 <a
-                                  href={`${process.env.NX_URL_GITHUB_GO}/issues/new?title=Unexpected%20Crash%Occurred`}
+                                  href={`${
+                                    import.meta.env.NX_URL_GITHUB_GO
+                                  }/issues/new?title=Unexpected%20Crash%Occurred`}
                                   style={{ color: 'white' }}
                                   target="_blank"
                                   rel="noreferrer"
@@ -134,7 +136,7 @@ class ErrorBoundary extends Component<Props, State> {
                               <Trans t={t} i18nKey="report.4">
                                 Or click{' '}
                                 <a
-                                  href={process.env.NX_URL_DISCORD_GO}
+                                  href={import.meta.env.NX_URL_DISCORD_GO}
                                   style={{ color: 'white' }}
                                   target="_blank"
                                   rel="noreferrer"

@@ -98,7 +98,7 @@ function PatchNotesCard() {
   const [{ isLoaded, text }, setState] = useState({ isLoaded: false, text: '' })
   useEffect(() => {
     fetch(
-      process.env.NX_URL_GITHUB_API_GO_RELEASES + package_json.version ?? ''
+      import.meta.env.NX_URL_GITHUB_API_GO_RELEASES + package_json.version ?? ''
     )
       .then((res) => res.arrayBuffer())
       .then((buffer) => {

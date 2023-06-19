@@ -1,7 +1,7 @@
 import fs = require('fs')
 // Load translation files from POEditor into the assets folder.
 const transDir = `${__dirname}/../Translated/`
-const localeDir = `${__dirname}/../assets/locales/`
+const localeDir = `${process.cwd()}/apps/frontend/public/locales/`
 const logging = false
 fs.readdir(transDir, (err, files) => {
   files = files.filter((fn) => fn.includes('.json'))

@@ -420,7 +420,7 @@ export default function TabBuild() {
         results.map((x) => x.builds),
         maxBuildsToShow
       )
-      if (process.env.NODE_ENV === 'development')
+      if (import.meta.env.NODE_ENV === 'development')
         console.log('Build Result', builds)
 
       buildResultDispatch({

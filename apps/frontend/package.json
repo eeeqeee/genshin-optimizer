@@ -1,0 +1,7 @@
+{
+  "name": "@genshin-optimizer/frontend",
+  "version": "0.0.1",
+  "browser": {
+    "@genshin-optimizer/char-cards": "../../libs/char-cards/src/index.ts"
+  }
+}

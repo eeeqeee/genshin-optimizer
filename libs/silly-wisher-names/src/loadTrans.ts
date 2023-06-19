@@ -1,7 +1,7 @@
 import fs = require('fs')
 // Load translation files from POEditor into the assets folder.
 const namesFilePath = `${__dirname}/../Translated/CharMemNames.csv`
-const localeDir = `${__dirname}/../assets/locales/`
+const localeDir = `${process.cwd()}/apps/frontend/public/locales/`
 
 const raw = fs.readFileSync(namesFilePath).toString()
 

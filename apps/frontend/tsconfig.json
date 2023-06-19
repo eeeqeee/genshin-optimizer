@@ -7,7 +7,10 @@
     "allowSyntheticDefaultImports": true,
     "noImplicitAny": false,
     "strict": true,
-    "jsxImportSource": "@emotion/react"
+    "jsxImportSource": "@emotion/react",
+    "target": "ESNext",
+    "module": "ESNext",
+    "types": ["vite/client"]
   },
   "files": [],
   "include": [],

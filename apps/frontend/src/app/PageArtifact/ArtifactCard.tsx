@@ -289,7 +289,7 @@ export default function ArtifactCard({
                 </strong>
               </Typography>
               <StarsDisplay stars={rarity} colored />
-              {/* {process.env.NODE_ENV === "development" && <Typography color="common.black">{id || `""`} </Typography>} */}
+              {/* {import.meta.env.NODE_ENV === "development" && <Typography color="common.black">{id || `""`} </Typography>} */}
             </Box>
             <Box
               sx={{ height: '100%', position: 'absolute', right: 0, top: 0 }}

@@ -361,7 +361,7 @@ function mergeData(data: Data[]): Data {
         {}
       if (accu === undefined) {
         const errMsg = `Multiple entries when merging \`unique\` for key ${path}`
-        if (process.env.NODE_ENV === 'development') throw new Error(errMsg)
+        if (import.meta.env.NODE_ENV === 'development') throw new Error(errMsg)
         else console.error(errMsg)
 
         accu = type === 'number' ? 'max' : 'small'

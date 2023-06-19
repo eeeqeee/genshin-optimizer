@@ -1,0 +1,3 @@
+public/locales/*
+!/public/locales/en
+/public/locales/en/sillyWisher_charNames.json
