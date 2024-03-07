@@ -13,6 +13,8 @@ on:
 
 env:
   CYPRESS_INSTALL_BINARY: 0
+  NX_PROFILE: profile.json
+  NX_PERF_LOGGING: true
 
 jobs:
   lint:
@@ -59,6 +61,11 @@ jobs:
         with:
           path: node_modules/.cache/nx
           key: lint-${{ github.sha }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: profile_json
+          path: profile.json
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
