@@ -11,6 +11,9 @@ on:
     branches:
       - master
 
+env:
+  CYPRESS_INSTALL_BINARY: 0
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -22,6 +25,7 @@ jobs:
         run: |
           echo "submodule=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
           echo "genfile=$(git rev-parse HEAD:libs)" >> $GITHUB_OUTPUT
+          echo "NX_PARALLEL=$(nproc --all)" | tee -a $GITHUB_ENV
       - uses: actions/cache/restore@v4
         with:
           path: .git/modules
@@ -39,12 +43,14 @@ jobs:
       - name: Yarn Install
         run: |
           yarn install --immutable --immutable-cache
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache@v4
         if: ${{ github.event_name == 'pull_request' }}
         with:
           path: node_modules/.cache/nx
-          key: genfile-${{ steps.get-cache-keys.outputs.genfile }}
+          key: lint-${{ github.sha }}
           restore-keys: |
+            lint-
+            genfile-${{ steps.get-cache-keys.outputs.genfile }}
             genfile-
       - name: Run lint
         run: |
@@ -59,6 +65,7 @@ jobs:
         run: |
           echo "submodule=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
           echo "genfile=$(git rev-parse HEAD:libs)" >> $GITHUB_OUTPUT
+          echo "NX_PARALLEL=$(nproc --all)" | tee -a $GITHUB_ENV
       - uses: actions/cache/restore@v4
         with:
           path: .git/modules
@@ -76,12 +83,14 @@ jobs:
       - name: Yarn Install
         run: |
           yarn install --immutable --immutable-cache
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache@v4
         if: ${{ github.event_name == 'pull_request' }}
         with:
           path: node_modules/.cache/nx
-          key: genfile-${{ steps.get-cache-keys.outputs.genfile }}
+          key: test-${{ github.sha }}
           restore-keys: |
+            test-
+            genfile-${{ steps.get-cache-keys.outputs.genfile }}
             genfile-
       - name: Run Tests
         run: |
@@ -170,6 +179,7 @@ jobs:
         run: |
           echo "submodule=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
           echo "genfile=$(git rev-parse HEAD:libs)" >> $GITHUB_OUTPUT
+          echo "NX_PARALLEL=$(nproc --all)" | tee -a $GITHUB_ENV
       - uses: actions/cache/restore@v4
         with:
           path: .git/modules

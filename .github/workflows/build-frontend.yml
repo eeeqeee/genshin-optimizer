@@ -16,6 +16,9 @@ on:
         type: boolean
         default: false
 
+env:
+  CYPRESS_INSTALL_BINARY: 0
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,7 +46,6 @@ jobs:
           cache: 'yarn'
       - name: Yarn Install
         run: |
-          CYPRESS_INSTALL_BINARY=0 \
           yarn install --immutable --immutable-cache
       - uses: actions/cache/restore@v4
         if: ${{ github.event_name == 'pull_request' }}
