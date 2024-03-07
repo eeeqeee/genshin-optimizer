@@ -59,8 +59,8 @@ jobs:
       - name: Build genshin-optimizer
         run: |
           NX_URL_GITHUB_GO_CURRENT_VERSION="https://github.com/${{ github.repository }}/commit/$(git rev-parse HEAD)" \
-          NX_DAEMON="false" \
           NX_SHOW_DEV_COMPONENTS="${{inputs.show_dev_components}}" \
+          NX_PROFILE=profile.json NX_PERF_LOGGING=true \
           yarn run nx run --verbose ${{inputs.frontend_name}}:build-vite:production --base-href=""
           echo ${{inputs.frontend_name}} > frontend_name
           echo ${{inputs.deployment_name}} > deployment_name
@@ -74,3 +74,8 @@ jobs:
             frontend_name
             deployment_name
             ref
+      - uses: actions/upload-artifact@v4
+        with:
+          name: profile_json
+          path: |
+            profile.json
