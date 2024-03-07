@@ -17,16 +17,15 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Get Cache Key
-        id: get-cache-key
+      - name: Get Cache Keys
+        id: get-cache-keys
         run: |
-          echo "key=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
+          echo "submodule=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
+          echo "genfile=$(git rev-parse HEAD:libs)" >> $GITHUB_OUTPUT
       - uses: actions/cache/restore@v4
         with:
           path: .git/modules
-          key: submodule-${{ steps.get-cache-key.outputs.key }}
+          key: submodule-${{ steps.get-cache-keys.outputs.submodule }}
           restore-keys: |
             submodule-
       - uses: actions/checkout@v4
@@ -37,10 +36,16 @@ jobs:
         with:
           node-version: 20
           cache: 'yarn'
-          cache-dependency-path: yarn.lock
       - name: Yarn Install
         run: |
           yarn install --immutable --immutable-cache
+      - uses: actions/cache/restore@v4
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          path: node_modules/.cache/nx
+          key: genfile-${{ steps.get-cache-keys.outputs.genfile }}
+          restore-keys: |
+            genfile-
       - name: Run lint
         run: |
           yarn run nx run-many --target=lint --fix=false --max-warnings=0
@@ -49,16 +54,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Get Cache Key
-        id: get-cache-key
+      - name: Get Cache Keys
+        id: get-cache-keys
         run: |
-          echo "key=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
+          echo "submodule=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
+          echo "genfile=$(git rev-parse HEAD:libs)" >> $GITHUB_OUTPUT
       - uses: actions/cache/restore@v4
         with:
           path: .git/modules
-          key: submodule-${{ steps.get-cache-key.outputs.key }}
+          key: submodule-${{ steps.get-cache-keys.outputs.submodule }}
           restore-keys: |
             submodule-
       - uses: actions/checkout@v4
@@ -69,10 +73,16 @@ jobs:
         with:
           node-version: 20
           cache: 'yarn'
-          cache-dependency-path: yarn.lock
       - name: Yarn Install
         run: |
           yarn install --immutable --immutable-cache
+      - uses: actions/cache/restore@v4
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          path: node_modules/.cache/nx
+          key: genfile-${{ steps.get-cache-keys.outputs.genfile }}
+          restore-keys: |
+            genfile-
       - name: Run Tests
         run: |
           yarn run nx run-many --target=test
@@ -81,20 +91,19 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Get Cache Key
-        id: get-cache-key
+      - name: Get Cache Keys
+        id: get-cache-keys
         run: |
-          echo "key=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v4
+          echo "submodule=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
+      - uses: actions/cache/restore@v4
         with:
           path: .git/modules
-          key: submodule-${{ steps.get-cache-key.outputs.key }}
+          key: submodule-${{ steps.get-cache-keys.outputs.submodule }}
           restore-keys: |
             submodule-
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }} # Force checking of the whole repo when running on pushes to master
-          persist-credentials: false
           submodules: true
       - name: Fetch master
         if: ${{ github.event_name == 'pull_request' }}
@@ -108,7 +117,6 @@ jobs:
         with:
           node-version: 20
           cache: 'yarn'
-          cache-dependency-path: yarn.lock
       - name: Yarn Install
         run: |
           yarn install --immutable --immutable-cache
@@ -120,14 +128,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Get Cache Key
-        id: get-cache-key
+      - name: Get Cache Keys
+        id: get-cache-keys
         run: |
-          echo "key=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
+          echo "submodule=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
+          echo "genfile=$(git rev-parse HEAD:libs)" >> $GITHUB_OUTPUT
       - uses: actions/cache/restore@v4
         with:
           path: .git/modules
-          key: submodule-${{ steps.get-cache-key.outputs.key }}
+          key: submodule-${{ steps.get-cache-keys.outputs.submodule }}
           restore-keys: |
             submodule-
       - uses: actions/checkout@v4
@@ -138,10 +147,50 @@ jobs:
         with:
           node-version: 20
           cache: 'yarn'
-          cache-dependency-path: yarn.lock
       - name: Yarn Install
         run: |
           yarn install --immutable --immutable-cache
+      - uses: actions/cache/restore@v4
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          path: node_modules/.cache/nx
+          key: genfile-${{ steps.get-cache-keys.outputs.genfile }}
+          restore-keys: |
+            genfile-
       - name: Check types
         run: |
           yarn run nx run-many --target=typecheck
+  gen-file:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get Cache Keys
+        id: get-cache-keys
+        run: |
+          echo "submodule=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
+          echo "genfile=$(git rev-parse HEAD:libs)" >> $GITHUB_OUTPUT
+      - uses: actions/cache/restore@v4
+        with:
+          path: .git/modules
+          key: submodule-${{ steps.get-cache-keys.outputs.submodule }}
+          restore-keys: |
+            submodule-
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+      - name: Yarn Install
+        run: |
+          yarn install --immutable --immutable-cache
+      - name: Gen file
+        run: |
+          yarn run nx run-many --target=gen-file
+      - uses: actions/cache/save@v4
+        with:
+          path: node_modules/.cache/nx
+          key: genfile-${{ steps.get-cache-keys.outputs.genfile }}
