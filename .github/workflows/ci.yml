@@ -91,18 +91,12 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         with:
           path: node_modules/.cache/nx
-          key: test-${{ github.sha }}
+          key: genfile-${{ steps.get-cache-keys.outputs.genfile }}
           restore-keys: |
-            test-
-            genfile-${{ steps.get-cache-keys.outputs.genfile }}
             genfile-
       - name: Run Tests
         run: |
           yarn run nx run-many --target=test
-      - uses: actions/cache/save@v4
-        with:
-          path: node_modules/.cache/nx
-          key: test-${{ github.sha }}
   format:
     runs-on: ubuntu-latest
     timeout-minutes: 10
