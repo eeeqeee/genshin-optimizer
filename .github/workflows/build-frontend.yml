@@ -16,20 +16,24 @@ on:
         type: boolean
         default: false
 
+env:
+  CYPRESS_INSTALL_BINARY: 0
+
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Get Cache Key
-        id: get-cache-key
+      - name: Get Cache Keys
+        id: get-cache-keys
         run: |
-          echo "key=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
+          echo "submodule=$(git ls-tree -r HEAD | grep '^160000' | sha256sum | cut -d " " -f 1)" >> $GITHUB_OUTPUT
+          echo "genfile=$(git rev-parse HEAD:libs)" >> $GITHUB_OUTPUT
       - uses: actions/cache/restore@v4
         with:
           path: .git/modules
-          key: submodule-${{ steps.get-cache-key.outputs.key }}
+          key: submodule-${{ steps.get-cache-keys.outputs.submodule }}
           restore-keys: |
             submodule-
       - uses: actions/checkout@v4
@@ -40,9 +44,16 @@ jobs:
         with:
           node-version: 20
           cache: 'yarn'
-      - name: Yarn install
+      - name: Yarn Install
         run: |
           yarn install --immutable --immutable-cache
+      - uses: actions/cache/restore@v4
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          path: node_modules/.cache/nx
+          key: genfile-${{ steps.get-cache-keys.outputs.genfile }}
+          restore-keys: |
+            genfile-
       - name: Setup .env
         run: |
           printf '%s' "$ENVFILE" > apps/frontend/.env.local
@@ -51,9 +62,9 @@ jobs:
       - name: Build genshin-optimizer
         run: |
           NX_URL_GITHUB_GO_CURRENT_VERSION="https://github.com/${{ github.repository }}/commit/$(git rev-parse HEAD)" \
-          NX_DAEMON="false" \
           NX_SHOW_DEV_COMPONENTS="${{inputs.show_dev_components}}" \
-          yarn run nx run ${{inputs.frontend_name}}:build-vite:production --base-href=""
+          NX_PROFILE=profile.json NX_PERF_LOGGING=true \
+          yarn run nx run --verbose ${{inputs.frontend_name}}:build-vite:production --base-href=""
           echo ${{inputs.frontend_name}} > frontend_name
           echo ${{inputs.deployment_name}} > deployment_name
           echo $(git rev-parse HEAD) > ref
@@ -66,3 +77,7 @@ jobs:
             frontend_name
             deployment_name
             ref
+      - uses: actions/upload-artifact@v4
+        with:
+          name: profile_json
+          path: profile.json
